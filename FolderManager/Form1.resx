@@ -146,10 +146,7 @@
         SUVORK5CYII=
 </value>
   </data>
-  <metadata name="Column1.UserAddedColumn" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
-    <value>True</value>
-  </metadata>
-  <metadata name="Column2.UserAddedColumn" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+  <metadata name="Column3.UserAddedColumn" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
     <value>True</value>
   </metadata>
   <metadata name="Column1.UserAddedColumn" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
@@ -203,6 +200,24 @@
         TzsHi/NbB/91YkPw9YpVQ87mLxlYkregf+7G9/tnL5s14JOJSX1nK4rSvb1fqdqgW34lr9+v9Zv7NvjW
         9PF7Pu+2f9/CHtnZ7/ZesXBa0Icz0jpkJUd1Te3Ru2O0oiiDFEV5RVGUzu097fMv9iLLIZOaA7sAAAAA
         SUVORK5CYII=
+</value>
+  </data>
+  <data name="BtnZiparVersoes.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAO
+        wgAADsIBFShKgAAAABh0RVh0U29mdHdhcmUAcGFpbnQubmV0IDQuMC41ZYUyZQAAAqlJREFUSEvNVTto
+        VEEUVUFF8Qd+QAkqSadgIcbGQq3shIUVrbaRIInZ5c09859NXrK7YCq1kRQKEhBs0glaiG2MqBBUCGIq
+        SZqgYmn35C67kp3kZTedBw73vjvnzn3z37btf0Gapkedc8cqlco6crxYLO6Mc3qCUuqO1vqT1jozxmxI
+        ay3b1SRJKnF+LvjPlFKvxsfHsxBCRkTPiKgmhKjHBNCQUr6t1+usK8Z9rUO5XO7XWn8bGxvLpJSZcy4D
+        cD7WxdBarwJ4E8c7YK09JKX8yp0DyJRSzREIIQZjbQwiWgDwMY53gIgeTk5ONueV/7w1PS/L5fKuWBsD
+        wGciehfHOyCl/CKlXBRCXNFaD1prB2JNHnouQERz7CdJciaEcA1AgRdvIzrnbgC4yPqeCrAIwHzLf+K9
+        XwKQyxAC20esJ6LeCrRFo6Oj+733J5RSx/PYat8X5+YiGsFz7/1PAD/aJCL+/sVk33vPdob1Wx6BEOJw
+        CKFfSvmPQogBAGeNMadGRkZOhhD6nHNH4txcrB0Bb1nn3AcA75nsE9E0twkhznnvZ5VS08aYA+3cngq0
+        RUR0yTl3E0CTLf9ymqZ7iGh5YmIiazQafE6exrm5WCsCUPLeT0kp7zGttVNEdBvAXgC/+QKsVqtc4AXr
+        t7wGUkrhvZ/hRWQ659g6bhNCaO5ca/0HwIU4NxdrRVprPmhXATTJPs99SzfE08NXCoDTcW4uokWe8d4v
+        83wznXNsZ1ttj0MI88aYJSK61c7tpcBi+6rYDETUx7ZUKu3mF60V636bApjTWq/E8W4oFAo7jDF8GF/H
+        bR3g4fLLJKXkvf+AiO53I+uUUgu1Wo3zrsd9roMQ4q4xZoW3Ib9o3cg6a+33JEmG4r5yUa1Wt/PrNjw8
+        vClZk6bpwTi/jb8Shy5mTg5qfwAAAABJRU5ErkJggg==
 </value>
   </data>
 </root>

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Runtime.Remoting.Messaging;
 using System.Text;
@@ -113,7 +114,7 @@ namespace FolderManager
 
       private void CreateFoldersVersions()
       {
-         foreach (var item in this.ListProjects)
+         foreach (var item in this.ListProjects.FindAll(x => x.IsSelected))
          {
             if (string.IsNullOrEmpty(RetornarVersao()))
                Directory.CreateDirectory(Path.Combine(TxtPathVersions.Text, item.Name));
@@ -259,7 +260,7 @@ namespace FolderManager
             bat.AppendLine();
             bat.AppendLine("ping 127.0.0.1 -n 1 >nul");
 
-            foreach (var item in this.ListProjects)
+            foreach (var item in this.ListProjects.FindAll(x => x.IsSelected))
             {
                // acha .csproj/.vbproj
                var baseProjDir = System.IO.Path.Combine(TxtPathProject.Text, item.Reference);
@@ -269,7 +270,23 @@ namespace FolderManager
                                  File.Exists(vbproj) ? vbproj : "";
 
                if (!File.Exists(projectPath))
-                  continue;
+               {
+                  var files = Directory.GetDirectories(baseProjDir);
+
+                  if (files.Count() > 0)
+                  {
+                     baseProjDir = files.First();
+                     csproj = System.IO.Path.Combine(baseProjDir, $"{item.Reference}.csproj");
+                     vbproj = System.IO.Path.Combine(baseProjDir, $"{item.Reference}.vbproj");
+                     projectPath = File.Exists(csproj) ? csproj :
+                                   File.Exists(vbproj) ? vbproj : "";
+
+                     if (!File.Exists(projectPath))
+                        continue;
+                  }
+                  else
+                     continue;
+               }
 
                var label = item.Name;
 
@@ -494,6 +511,39 @@ namespace FolderManager
          }
          else
             TxtPathProject.Text = string.Empty;
+      }
+
+      private void BtnZiparVersoes_Click(object sender, EventArgs e)
+      {
+         try
+         {
+            if (string.IsNullOrEmpty(TxtPathVersions.Text) || !Directory.Exists(TxtPathVersions.Text))
+            {
+               MessageBox.Show("Por favor, selecione um caminho para as versões válido.");
+               return;
+            }
+
+            var folders = Directory.GetDirectories(TxtPathVersions.Text);
+
+            var zips = Directory.EnumerateFiles(TxtPathVersions.Text, "*.zip", SearchOption.TopDirectoryOnly);
+
+            foreach (var item in zips)
+               File.Delete(item);
+
+            foreach (var item in folders)
+            {
+               var folderInfo = new FileInfo(item);
+
+               using (ZipArchive zip = ZipFile.Open(Path.Combine(folderInfo.DirectoryName, string.Concat(folderInfo.Name, ".zip")), ZipArchiveMode.Create))
+                  zip.CreateEntry(item);
+            }
+
+            MessageBox.Show("Pastas Zipadas com Sucesso");
+         }
+         catch (Exception)
+         {
+            MessageBox.Show("Ocorreu um erro ao zipar as pastas. Verifique se o caminho está correto e se você tem permissão para modificar o diretório.");
+         }
       }
    }
 }
