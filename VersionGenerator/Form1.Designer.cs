@@ -43,15 +43,16 @@
          this.label1 = new System.Windows.Forms.Label();
          this.BtnRemove = new System.Windows.Forms.Button();
          this.Dgv = new System.Windows.Forms.DataGridView();
+         this.Column3 = new System.Windows.Forms.DataGridViewCheckBoxColumn();
+         this.Column1 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+         this.Column2 = new System.Windows.Forms.DataGridViewTextBoxColumn();
          this.BtnAdd = new System.Windows.Forms.Button();
          this.TxtFolderName = new System.Windows.Forms.TextBox();
          this.BtnGenerate = new System.Windows.Forms.Button();
          this.groupBox4 = new System.Windows.Forms.GroupBox();
          this.BtnPathVersions = new System.Windows.Forms.Button();
-         this.Column3 = new System.Windows.Forms.DataGridViewCheckBoxColumn();
-         this.Column1 = new System.Windows.Forms.DataGridViewTextBoxColumn();
-         this.Column2 = new System.Windows.Forms.DataGridViewTextBoxColumn();
          this.BtnZiparVersoes = new System.Windows.Forms.Button();
+         this.ChkAll = new System.Windows.Forms.CheckBox();
          this.groupBox1.SuspendLayout();
          this.groupBox2.SuspendLayout();
          this.groupBox3.SuspendLayout();
@@ -118,6 +119,7 @@
          // 
          // groupBox3
          // 
+         this.groupBox3.Controls.Add(this.ChkAll);
          this.groupBox3.Controls.Add(this.CmbType);
          this.groupBox3.Controls.Add(this.label2);
          this.groupBox3.Controls.Add(this.label3);
@@ -211,6 +213,34 @@
          this.Dgv.Size = new System.Drawing.Size(641, 228);
          this.Dgv.TabIndex = 3;
          // 
+         // Column3
+         // 
+         this.Column3.DataPropertyName = "IsSelected";
+         this.Column3.FillWeight = 25F;
+         this.Column3.HeaderText = "";
+         this.Column3.MinimumWidth = 25;
+         this.Column3.Name = "Column3";
+         this.Column3.Width = 25;
+         // 
+         // Column1
+         // 
+         this.Column1.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
+         this.Column1.DataPropertyName = "Name";
+         this.Column1.HeaderText = "Nome da Pasta";
+         this.Column1.Name = "Column1";
+         this.Column1.ReadOnly = true;
+         this.Column1.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
+         // 
+         // Column2
+         // 
+         this.Column2.DataPropertyName = "Reference";
+         this.Column2.FillWeight = 200F;
+         this.Column2.HeaderText = "Referência";
+         this.Column2.Name = "Column2";
+         this.Column2.ReadOnly = true;
+         this.Column2.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
+         this.Column2.Width = 200;
+         // 
          // BtnAdd
          // 
          this.BtnAdd.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
@@ -266,34 +296,6 @@
          this.BtnPathVersions.UseVisualStyleBackColor = true;
          this.BtnPathVersions.Click += new System.EventHandler(this.BtnPath_Click);
          // 
-         // Column3
-         // 
-         this.Column3.DataPropertyName = "IsSelected";
-         this.Column3.FillWeight = 25F;
-         this.Column3.HeaderText = "";
-         this.Column3.MinimumWidth = 25;
-         this.Column3.Name = "Column3";
-         this.Column3.Width = 25;
-         // 
-         // Column1
-         // 
-         this.Column1.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
-         this.Column1.DataPropertyName = "Name";
-         this.Column1.HeaderText = "Nome da Pasta";
-         this.Column1.Name = "Column1";
-         this.Column1.ReadOnly = true;
-         this.Column1.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
-         // 
-         // Column2
-         // 
-         this.Column2.DataPropertyName = "Reference";
-         this.Column2.FillWeight = 200F;
-         this.Column2.HeaderText = "Referência";
-         this.Column2.Name = "Column2";
-         this.Column2.ReadOnly = true;
-         this.Column2.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
-         this.Column2.Width = 200;
-         // 
          // BtnZiparVersoes
          // 
          this.BtnZiparVersoes.Image = ((System.Drawing.Image)(resources.GetObject("BtnZiparVersoes.Image")));
@@ -306,6 +308,18 @@
          this.BtnZiparVersoes.TextAlign = System.Drawing.ContentAlignment.BottomCenter;
          this.BtnZiparVersoes.UseVisualStyleBackColor = true;
          this.BtnZiparVersoes.Click += new System.EventHandler(this.BtnZiparVersoes_Click);
+         // 
+         // ChkAll
+         // 
+         this.ChkAll.AutoSize = true;
+         this.ChkAll.Checked = true;
+         this.ChkAll.CheckState = System.Windows.Forms.CheckState.Checked;
+         this.ChkAll.Location = new System.Drawing.Point(48, 50);
+         this.ChkAll.Name = "ChkAll";
+         this.ChkAll.Size = new System.Drawing.Size(15, 14);
+         this.ChkAll.TabIndex = 11;
+         this.ChkAll.UseVisualStyleBackColor = true;
+         this.ChkAll.CheckedChanged += new System.EventHandler(this.ChkAll_CheckedChanged);
          // 
          // Form1
          // 
@@ -360,6 +374,7 @@
       private System.Windows.Forms.DataGridViewTextBoxColumn Column1;
       private System.Windows.Forms.DataGridViewTextBoxColumn Column2;
       private System.Windows.Forms.Button BtnZiparVersoes;
+      private System.Windows.Forms.CheckBox ChkAll;
    }
 }
 

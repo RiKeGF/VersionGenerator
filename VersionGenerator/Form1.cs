@@ -148,92 +148,70 @@ namespace VersionGenerator
 
          foreach (var item in this.ListProjects.FindAll(x => x.IsSelected))
          {
-            string path = $@"{TxtPathProject.Text}{item.Reference}\{item.Reference}";
+            string path = $@"{TxtPathProject.Text}{item.Reference}";
 
-            if (File.Exists(string.Concat(path, ".csproj")))
-               path += ".csproj";
+            var listFiles = new List<string>();
 
-            if (File.Exists(string.Concat(path, ".vbproj")))
-               path += ".vbproj";
+            listFiles.AddRange(Directory.GetFiles(path, "*.csproj", SearchOption.AllDirectories));
+            listFiles.AddRange(Directory.GetFiles(path, "*.vbproj", SearchOption.AllDirectories));
 
-            if (!path.Contains(".csproj") && !path.Contains(".vbproj"))
+            if (listFiles.Count > 0)
             {
-               path = $@"{TxtPathProject.Text}{item.Reference}";
-
-               var files = Directory.GetDirectories(path);
-
-               if (files.Count() > 0)
+               foreach (var file in listFiles)
                {
-                  path = $@"{files.First()}\{item.Reference}";
+                  var xml = XDocument.Load(file);
+                  var ns = xml.Root.Name.Namespace;
 
-                  if (File.Exists(string.Concat(path, ".csproj")))
-                     path += ".csproj";
+                  var group = xml.Root.Elements(ns + "PropertyGroup")
+                                      .FirstOrDefault(e => e.Attribute("Condition") == null)
+                             ?? new XElement(ns + "PropertyGroup");
+                  if (group.Parent == null) xml.Root.AddFirst(group);
 
-                  if (File.Exists(string.Concat(path, ".vbproj")))
-                     path += ".vbproj";
+                  group.SetElementValue(ns + "Version", RetornarVersao());
+                  group.SetElementValue(ns + "FileVersion", RetornarVersao());
+                  group.SetElementValue(ns + "AssemblyVersion", RetornarVersao());
+                  group.SetElementValue(ns + "InformationalVersion", RetornarVersao());
 
-                  if (!File.Exists(path))
-                     continue;
-               }
-               else
-                  continue;
-            }
-
-            var xml = XDocument.Load(path);
-            var ns = xml.Root.Name.Namespace;
-
-            var group = xml.Root.Elements(ns + "PropertyGroup")
-                                .FirstOrDefault(e => e.Attribute("Condition") == null)
-                       ?? new XElement(ns + "PropertyGroup");
-            if (group.Parent == null) xml.Root.AddFirst(group);
-
-            group.SetElementValue(ns + "Version", RetornarVersao());
-            group.SetElementValue(ns + "FileVersion", RetornarVersao());
-            group.SetElementValue(ns + "AssemblyVersion", RetornarVersao());
-            group.SetElementValue(ns + "InformationalVersion", RetornarVersao());
-
-            xml.Save(path);
-
-            var csproj = $@"{TxtPathProject.Text}{item.Reference}\AssemblyInfo.cs";
-            var csprojProp = $@"{TxtPathProject.Text}{item.Reference}\Properties\AssemblyInfo.cs";
-            var vbproj = $@"{TxtPathProject.Text}{item.Reference}\AssemblyInfo.vb";
-            var vbprojProp = $@"{TxtPathProject.Text}{item.Reference}\Properties\AssemblyInfo.vb";
-            var projectPath = File.Exists(csprojProp) ? csprojProp :
-                              File.Exists(vbprojProp) ? vbprojProp :
-                              File.Exists(csproj) ? csproj :
-                              File.Exists(vbproj) ? vbproj :
-                              "";
-
-            if (string.IsNullOrEmpty(projectPath)) continue;
-
-            var txt = System.IO.File.ReadAllText(projectPath);
-
-            // substitui ou injeta
-            string ReplaceOrAdd(string input, string attr, string value)
-            {
-               if (Path.GetExtension(projectPath).Equals(".vb"))
-               {
-                  var rgx = new Regex($@"^\s*\<Assembly:\s*{attr}\s*\(\s*""[^""]*""\s*\)\s*\>\s*$",
-                                      RegexOptions.Multiline);
-                  if (rgx.IsMatch(input))
-                     return rgx.Replace(input, $@"<Assembly: {attr}(""{value}"")>");
-                  return input + Environment.NewLine + $@"<Assembly: {attr}(""{value}"")>";
-               }
-               else
-               {
-                  var rgx = new Regex($@"^\s*\[assembly:\s*{attr}\s*\(\s*""[^""]*""\s*\)\s*\]\s*$",
-                                      RegexOptions.Multiline);
-                  if (rgx.IsMatch(input))
-                     return rgx.Replace(input, $@"[assembly: {attr}(""{value}"")]");
-                  return input + Environment.NewLine + $@"[assembly: {attr}(""{value}"")]";
+                  xml.Save(file);
                }
             }
 
-            txt = ReplaceOrAdd(txt, "AssemblyVersion", RetornarVersao());
-            txt = ReplaceOrAdd(txt, "AssemblyFileVersion", RetornarVersao());
-            txt = ReplaceOrAdd(txt, "AssemblyInformationalVersion", RetornarVersao());
+            listFiles = Directory.GetFiles(path, "AssemblyInfo.*", SearchOption.AllDirectories).ToList();
 
-            System.IO.File.WriteAllText(projectPath, txt);
+            if (listFiles.Count > 0)
+            {
+               foreach (var file in listFiles)
+               {
+                  var txt = System.IO.File.ReadAllText(file);
+
+                  // substitui ou injeta
+                  string ReplaceOrAdd(string input, string attr, string value)
+                  {
+                     if (Path.GetExtension(file).Equals(".vb"))
+                     {
+                        var rgx = new Regex($@"^\s*\<Assembly:\s*{attr}\s*\(\s*""[^""]*""\s*\)\s*\>\s*$",
+                                            RegexOptions.Multiline);
+                        if (rgx.IsMatch(input))
+                           return rgx.Replace(input, $@"<Assembly: {attr}(""{value}"")>");
+                        return input + Environment.NewLine + $@"<Assembly: {attr}(""{value}"")>";
+                     }
+                     else
+                     {
+                        var rgx = new Regex($@"^\s*\[assembly:\s*{attr}\s*\(\s*""[^""]*""\s*\)\s*\]\s*$",
+                                            RegexOptions.Multiline);
+                        if (rgx.IsMatch(input))
+                           return rgx.Replace(input, $@"[assembly: {attr}(""{value}"")]");
+                        return input + Environment.NewLine + $@"[assembly: {attr}(""{value}"")]";
+                     }
+                  }
+
+                  txt = ReplaceOrAdd(txt, "AssemblyVersion", RetornarVersao());
+                  txt = ReplaceOrAdd(txt, "AssemblyFileVersion", RetornarVersao());
+                  txt = ReplaceOrAdd(txt, "AssemblyInformationalVersion", RetornarVersao());
+
+                  System.IO.File.WriteAllText(file, txt);
+               }
+            }
          }
       }
 
@@ -257,6 +235,11 @@ namespace VersionGenerator
          if (string.IsNullOrEmpty(TxtPathVersions.Text) || !Directory.Exists(TxtPathVersions.Text))
          {
             MessageBox.Show("Por favor, selecione um caminho para as versões válido.");
+            return false;
+         }
+         if (!this.ListProjects.Exists(x=>x.IsSelected))
+         {
+            MessageBox.Show("Selecione um projeto para gerar");
             return false;
          }
 
@@ -288,64 +271,51 @@ namespace VersionGenerator
             {
                // acha .csproj/.vbproj
                var baseProjDir = System.IO.Path.Combine(TxtPathProject.Text, item.Reference);
-               var csproj = System.IO.Path.Combine(baseProjDir, $"{item.Reference}.csproj");
-               var vbproj = System.IO.Path.Combine(baseProjDir, $"{item.Reference}.vbproj");
-               var projectPath = File.Exists(csproj) ? csproj :
-                                 File.Exists(vbproj) ? vbproj : "";
 
-               if (!File.Exists(projectPath))
+               var listFiles = new List<string>();
+
+               listFiles.AddRange(Directory.GetFiles(baseProjDir, "*.csproj", SearchOption.AllDirectories));
+               listFiles.AddRange(Directory.GetFiles(baseProjDir, "*.vbproj", SearchOption.AllDirectories));
+
+               if (listFiles.Count == 0) continue;
+
+               foreach (var file in listFiles)
                {
-                  var files = Directory.GetDirectories(baseProjDir);
+                                    var label = item.Name;
 
-                  if (files.Count() > 0)
-                  {
-                     baseProjDir = files.First();
-                     csproj = System.IO.Path.Combine(baseProjDir, $"{item.Reference}.csproj");
-                     vbproj = System.IO.Path.Combine(baseProjDir, $"{item.Reference}.vbproj");
-                     projectPath = File.Exists(csproj) ? csproj :
-                                   File.Exists(vbproj) ? vbproj : "";
+                  if (!string.IsNullOrEmpty(TxtVersion.Text))
+                     label = $"{item.Name} - {TxtVersion.Text}";
 
-                     if (!File.Exists(projectPath))
-                        continue;
-                  }
-                  else
-                     continue;
-               }
+                  var outDir = System.IO.Path.Combine(TxtPathVersions.Text, label);
 
-               var label = item.Name;
-
-               if (!string.IsNullOrEmpty(TxtVersion.Text))
-                  label = $"{item.Name} - {TxtVersion.Text}";
-
-               var outDir = System.IO.Path.Combine(TxtPathVersions.Text, label);
-
-               bat.AppendLine("REM ---------------------------");
-               bat.AppendLine($@"REM Projeto: {item.Name}");
-               bat.AppendLine("REM ---------------------------");
-               bat.AppendLine("ping 127.0.0.1 -n 6 >nul");
-               bat.AppendLine($@"set SolutionFile=""{projectPath}""");
-               bat.AppendLine($@"set VSEnvCmd=""C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\Tools\VsDevCmd.bat""");
-               bat.AppendLine("echo -----------------------------------------------");
-               bat.AppendLine($@"echo {label}");
-               bat.AppendLine("echo -----------------------------------------------");
-               bat.AppendLine("ping 127.0.0.1 -n 6 >nul");
-               bat.AppendLine();
-               bat.AppendLine(@"CALL %VSEnvCmd%");
-               bat.AppendLine(@"echo Iniciando a build da solução em modo Release...");
-               bat.AppendLine($@"msbuild %SolutionFile% /t:Build /p:Configuration=Release /p:Platform=""Any CPU"" /p:OutPutPath=""{outDir}""");
-               bat.AppendLine(@"IF %ERRORLEVEL% EQU 0 (
+                  bat.AppendLine("REM ---------------------------");
+                  bat.AppendLine($@"REM Projeto: {item.Name}");
+                  bat.AppendLine("REM ---------------------------");
+                  bat.AppendLine("ping 127.0.0.1 -n 6 >nul");
+                  bat.AppendLine($@"set SolutionFile=""{file}""");
+                  bat.AppendLine($@"set VSEnvCmd=""C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\Tools\VsDevCmd.bat""");
+                  bat.AppendLine("echo -----------------------------------------------");
+                  bat.AppendLine($@"echo {label}");
+                  bat.AppendLine("echo -----------------------------------------------");
+                  bat.AppendLine("ping 127.0.0.1 -n 6 >nul");
+                  bat.AppendLine();
+                  bat.AppendLine(@"CALL %VSEnvCmd%");
+                  bat.AppendLine(@"echo Iniciando a build da solução em modo Release...");
+                  bat.AppendLine($@"msbuild %SolutionFile% /t:Build /p:Configuration=Release /p:Platform=""Any CPU"" /p:OutPutPath=""{outDir}""");
+                  bat.AppendLine(@"IF %ERRORLEVEL% EQU 0 (
                                  echo Build Release concluida com SUCESSO!
                              ) ELSE (
                                  echo Ocorreu um ERRO durante a build Release.
                              )");
 
-               bat.AppendLine();
-               bat.AppendLine();
-               bat.AppendLine();
-               bat.AppendLine();
-               bat.AppendLine();
-               bat.AppendLine();
-               bat.AppendLine();
+                  bat.AppendLine();
+                  bat.AppendLine();
+                  bat.AppendLine();
+                  bat.AppendLine();
+                  bat.AppendLine();
+                  bat.AppendLine();
+                  bat.AppendLine();
+               }
             }
 
             var batPath = System.IO.Path.Combine(TxtPathVersions.Text, $"gerar_v{RetornarVersao()}.bat");
@@ -542,7 +512,7 @@ namespace VersionGenerator
                ChangeAssemblyVersion();
                GenerateVersions();
 
-               ExecuteBat();               
+               ExecuteBat();
             }
          }
          catch (Exception)
@@ -623,6 +593,12 @@ namespace VersionGenerator
          {
             MessageBox.Show("Ocorreu um erro ao zipar as pastas. Verifique se o caminho está correto e se você tem permissão para modificar o diretório.");
          }
+      }
+
+      private void ChkAll_CheckedChanged(object sender, EventArgs e)
+      {
+         this.ListProjects.ForEach(x => x.IsSelected = ChkAll.Checked);
+         Dgv.Refresh();
       }
    }
 }
