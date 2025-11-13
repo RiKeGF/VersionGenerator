@@ -54,11 +54,27 @@
     <Compile Include="Form1.Designer.cs">
       <DependentUpon>Form1.cs</DependentUpon>
     </Compile>
+    <Compile Include="Load.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Load.designer.cs" />
+    <Compile Include="Loading.cs" />
+    <Compile Include="LoadingProgress.cs" />
+    <Compile Include="LoadProgress.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="LoadProgress.designer.cs">
+      <DependentUpon>LoadProgress.cs</DependentUpon>
+    </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Project.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="Form1.resx">
       <DependentUpon>Form1.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Load.resx" />
+    <EmbeddedResource Include="LoadProgress.resx">
+      <DependentUpon>LoadProgress.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>

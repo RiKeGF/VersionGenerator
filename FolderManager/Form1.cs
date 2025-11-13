@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Forza.Shared.Utilitarios;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -7,6 +8,7 @@ using System.Linq;
 using System.Runtime.Remoting.Messaging;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Windows.Forms;
 using System.Xml.Linq;
 
@@ -363,9 +365,25 @@ namespace FolderManager
                var vbproj = System.IO.Path.Combine(baseProjDir, $"{item.Reference}.vbproj");
                var projectPath = File.Exists(csproj) ? csproj :
                                  File.Exists(vbproj) ? vbproj : "";
-
+             
                if (!File.Exists(projectPath))
-                  continue;
+               {
+                  var files = Directory.GetDirectories(baseProjDir);
+
+                  if (files.Count() > 0)
+                  {
+                     baseProjDir = files.First();
+                     csproj = System.IO.Path.Combine(baseProjDir, $"{item.Reference}.csproj");
+                     vbproj = System.IO.Path.Combine(baseProjDir, $"{item.Reference}.vbproj");
+                     projectPath = File.Exists(csproj) ? csproj :
+                                   File.Exists(vbproj) ? vbproj : "";
+
+                     if (!File.Exists(projectPath))
+                        continue;
+                  }
+                  else
+                     continue;
+               }
 
                var label = item.Name;
 
@@ -523,22 +541,38 @@ namespace FolderManager
                return;
             }
 
+            var zips = Directory.EnumerateFiles(TxtPathVersions.Text, "*.zip", SearchOption.TopDirectoryOnly);
+            foreach (var zip in zips)
+               File.Delete(zip);
+
             var folders = Directory.GetDirectories(TxtPathVersions.Text);
 
-            var zips = Directory.EnumerateFiles(TxtPathVersions.Text, "*.zip", SearchOption.TopDirectoryOnly);
-
-            foreach (var item in zips)
-               File.Delete(item);
-
-            foreach (var item in folders)
+            if (folders.Count() > 0)
             {
-               var folderInfo = new FileInfo(item);
+               using (var load = new LoadingProgress("Zipando Arquivos..."))
+               {
+                  load.TotalRegistros = folders.Count();
 
-               using (ZipArchive zip = ZipFile.Open(Path.Combine(folderInfo.DirectoryName, string.Concat(folderInfo.Name, ".zip")), ZipArchiveMode.Create))
-                  zip.CreateEntry(item);
+                  foreach (var folder in folders)
+                  {
+                     var folderName = Path.GetFileName(folder.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+                     var zipPath = Path.Combine(TxtPathVersions.Text, folderName + ".zip");
+
+                     ZipFile.CreateFromDirectory(
+                         folder,
+                         zipPath,
+                         CompressionLevel.Optimal,
+                         includeBaseDirectory: false
+                     );
+
+                     load.TotalRegistrosProcessados++;
+                     load.AtualizarProgresso();
+                  }
+               }
+
+               Thread.Sleep(10);
+               MessageBox.Show("Pastas Zipadas com Sucesso");
             }
-
-            MessageBox.Show("Pastas Zipadas com Sucesso");
          }
          catch (Exception)
          {
