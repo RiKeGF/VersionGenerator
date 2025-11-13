@@ -1,4 +1,4 @@
-﻿namespace FolderManager
+﻿namespace VersionGenerator
 {
    public class Project
    {

@@ -1,4 +1,4 @@
-﻿namespace FolderManager
+﻿namespace VersionGenerator
 {
    partial class Form1
    {
@@ -185,7 +185,7 @@
          // 
          // BtnRemove
          // 
-         this.BtnRemove.Image = global::FolderManager.Properties.Resources.est_remove_16_16;
+         this.BtnRemove.Image = global::VersionGenerator.Properties.Resources.est_remove_16_16;
          this.BtnRemove.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
          this.BtnRemove.Location = new System.Drawing.Point(1, 278);
          this.BtnRemove.Name = "BtnRemove";
@@ -233,7 +233,7 @@
          // 
          // BtnGenerate
          // 
-         this.BtnGenerate.Image = global::FolderManager.Properties.Resources.ok;
+         this.BtnGenerate.Image = global::VersionGenerator.Properties.Resources.ok;
          this.BtnGenerate.ImageAlign = System.Drawing.ContentAlignment.TopCenter;
          this.BtnGenerate.Location = new System.Drawing.Point(692, 329);
          this.BtnGenerate.Name = "BtnGenerate";

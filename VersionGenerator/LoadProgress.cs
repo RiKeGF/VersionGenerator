@@ -1,6 +1,6 @@
 ﻿using System.Windows.Forms;
 
-namespace FolderManager
+namespace VersionGenerator
 {
    internal partial class LoadProgress : Form
    {

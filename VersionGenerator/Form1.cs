@@ -12,7 +12,7 @@ using System.Threading;
 using System.Windows.Forms;
 using System.Xml.Linq;
 
-namespace FolderManager
+namespace VersionGenerator
 {
    public partial class Form1 : Form
    {
