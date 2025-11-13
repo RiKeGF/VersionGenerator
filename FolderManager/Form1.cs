@@ -144,7 +144,9 @@ namespace FolderManager
 
       private void ChangeAssemblyVersion()
       {
-         foreach (var item in this.ListProjects)
+         if (string.IsNullOrEmpty(RetornarVersao())) return;
+
+         foreach (var item in this.ListProjects.FindAll(x => x.IsSelected))
          {
             string path = $@"{TxtPathProject.Text}{item.Reference}\{item.Reference}";
 
@@ -154,20 +156,41 @@ namespace FolderManager
             if (File.Exists(string.Concat(path, ".vbproj")))
                path += ".vbproj";
 
+            if (!path.Contains(".csproj") && !path.Contains(".vbproj"))
+            {
+               path = $@"{TxtPathProject.Text}{item.Reference}";
+
+               var files = Directory.GetDirectories(path);
+
+               if (files.Count() > 0)
+               {
+                  path = $@"{files.First()}\{item.Reference}";
+
+                  if (File.Exists(string.Concat(path, ".csproj")))
+                     path += ".csproj";
+
+                  if (File.Exists(string.Concat(path, ".vbproj")))
+                     path += ".vbproj";
+
+                  if (!File.Exists(path))
+                     continue;
+               }
+               else
+                  continue;
+            }
+
             var xml = XDocument.Load(path);
             var ns = xml.Root.Name.Namespace;
 
-            // pega (ou cria) um PropertyGroup SEM Condition
             var group = xml.Root.Elements(ns + "PropertyGroup")
                                 .FirstOrDefault(e => e.Attribute("Condition") == null)
                        ?? new XElement(ns + "PropertyGroup");
             if (group.Parent == null) xml.Root.AddFirst(group);
 
-            // define/atualiza os nós
-            group.SetElementValue(ns + "Version", RetornarVersao());                // Product/Package version
-            group.SetElementValue(ns + "FileVersion", RetornarVersao());            // File version (Win)
-            group.SetElementValue(ns + "AssemblyVersion", RetornarVersao());// cuidado com binding
-            group.SetElementValue(ns + "InformationalVersion", RetornarVersao());   // exibe no About
+            group.SetElementValue(ns + "Version", RetornarVersao());
+            group.SetElementValue(ns + "FileVersion", RetornarVersao());
+            group.SetElementValue(ns + "AssemblyVersion", RetornarVersao());
+            group.SetElementValue(ns + "InformationalVersion", RetornarVersao());
 
             xml.Save(path);
 
@@ -175,13 +198,13 @@ namespace FolderManager
             var csprojProp = $@"{TxtPathProject.Text}{item.Reference}\Properties\AssemblyInfo.cs";
             var vbproj = $@"{TxtPathProject.Text}{item.Reference}\AssemblyInfo.vb";
             var vbprojProp = $@"{TxtPathProject.Text}{item.Reference}\Properties\AssemblyInfo.vb";
-            var projectPath = File.Exists(csproj) ? csproj :
-                              File.Exists(vbproj) ? vbproj :
-                              File.Exists(csprojProp) ? csprojProp :
+            var projectPath = File.Exists(csprojProp) ? csprojProp :
                               File.Exists(vbprojProp) ? vbprojProp :
+                              File.Exists(csproj) ? csproj :
+                              File.Exists(vbproj) ? vbproj :
                               "";
 
-            if (string.IsNullOrEmpty(projectPath)) return;
+            if (string.IsNullOrEmpty(projectPath)) continue;
 
             var txt = System.IO.File.ReadAllText(projectPath);
 
@@ -218,7 +241,6 @@ namespace FolderManager
       {
          string texto = TxtVersion.Text;
 
-         // aceita "4.0.0.0" ou "v4.0.0.0" (maiúsculo/minúsculo)
          var regex = new Regex(@"\bv?(?<ver>\d+(?:\.\d+){3})\b", RegexOptions.IgnoreCase);
 
          var match = regex.Match(texto);
@@ -325,7 +347,6 @@ namespace FolderManager
                bat.AppendLine();
                bat.AppendLine();
             }
-            bat.AppendLine("pause");
 
             var batPath = System.IO.Path.Combine(TxtPathVersions.Text, $"gerar_v{RetornarVersao()}.bat");
             File.WriteAllText(batPath, bat.ToString(), Encoding.Default);
@@ -365,7 +386,7 @@ namespace FolderManager
                var vbproj = System.IO.Path.Combine(baseProjDir, $"{item.Reference}.vbproj");
                var projectPath = File.Exists(csproj) ? csproj :
                                  File.Exists(vbproj) ? vbproj : "";
-             
+
                if (!File.Exists(projectPath))
                {
                   var files = Directory.GetDirectories(baseProjDir);
@@ -420,7 +441,6 @@ namespace FolderManager
                bat.AppendLine();
                bat.AppendLine();
             }
-            bat.AppendLine("pause");
 
             var batPath = System.IO.Path.Combine(TxtPathVersions.Text, $"gerarinconsist_v{RetornarVersao()}.bat");
             File.WriteAllText(batPath, bat.ToString(), Encoding.Default);
@@ -446,12 +466,20 @@ namespace FolderManager
          {
             proc.WaitForExit();
 
-            this.ListInconsistProjects.Clear();
-            this.ListInconsistProjects.AddRange(this.ListProjects.FindAll(x => Directory.GetFiles(Path.Combine(TxtPathVersions.Text, string.Concat(x.Name, " - ", TxtVersion.Text))).Length == 0));
-            if (this.ListInconsistProjects.Count > 0)
+            if (proc.ExitCode == 0 || proc.ExitCode == 255)
             {
-               GenerateVersionsInconsist();
-               ExecuteBatInconsist(false);
+               this.ListInconsistProjects.Clear();
+               this.ListInconsistProjects.AddRange(this.ListProjects.FindAll(x => Directory.GetFiles(Path.Combine(TxtPathVersions.Text, string.Concat(x.Name, " - ", TxtVersion.Text))).Length == 0));
+
+               if (this.ListInconsistProjects.Count > 0)
+               {
+                  GenerateVersionsInconsist();
+                  ExecuteBatInconsist(false);
+               }
+               else
+               {
+                  Finish();
+               }
             }
          }
       }
@@ -471,19 +499,34 @@ namespace FolderManager
          {
             proc.WaitForExit();
 
-            if (!isReprocessamento)
+            if (proc.ExitCode == 0 || proc.ExitCode == 255)
             {
-               this.ListInconsistProjects.Clear();
-               this.ListInconsistProjects.AddRange(this.ListProjects.FindAll(x => Directory.GetFiles(Path.Combine(TxtPathVersions.Text, string.Concat(x.Name, " - ", TxtVersion.Text))).Length == 0));
-               if (this.ListInconsistProjects.Count > 0)
+               if (!isReprocessamento)
                {
-                  GenerateVersionsInconsist();
-                  ExecuteBatInconsist(true);
+                  this.ListInconsistProjects.Clear();
+                  this.ListInconsistProjects.AddRange(this.ListProjects.FindAll(x => Directory.GetFiles(Path.Combine(TxtPathVersions.Text, string.Concat(x.Name, " - ", TxtVersion.Text))).Length == 0));
+                  if (this.ListInconsistProjects.Count > 0)
+                  {
+                     GenerateVersionsInconsist();
+                     ExecuteBatInconsist(true);
+                  }
+                  else
+                  {
+                     Finish();
+                  }
                }
+               else
+                  MessageBox.Show(string.Format("Versões não Geradas:\n\n{0}", string.Join("\n", this.ListInconsistProjects.ConvertAll(x => x.Name))));
             }
-            else
-               MessageBox.Show(string.Format("Versões não Geradas:\n\n{0}", string.Join("\n", this.ListInconsistProjects.ConvertAll(x => x.Name))));
          }
+      }
+
+      private void Finish()
+      {
+         ZipFiles();
+         Thread.Sleep(10);
+         MessageBox.Show("Versões Geradas com Sucesso");
+         Process.Start(TxtPathVersions.Text);
       }
 
       private void BtnGenerate_Click(object sender, EventArgs e)
@@ -499,10 +542,7 @@ namespace FolderManager
                ChangeAssemblyVersion();
                GenerateVersions();
 
-               MessageBox.Show("Pastas Criadas com Sucesso");
-               Process.Start(TxtPathVersions.Text);
-
-               ExecuteBat();
+               ExecuteBat();               
             }
          }
          catch (Exception)
@@ -531,6 +571,39 @@ namespace FolderManager
             TxtPathProject.Text = string.Empty;
       }
 
+      private void ZipFiles()
+      {
+         var zips = Directory.EnumerateFiles(TxtPathVersions.Text, "*.zip", SearchOption.TopDirectoryOnly);
+         foreach (var zip in zips)
+            File.Delete(zip);
+
+         var folders = Directory.GetDirectories(TxtPathVersions.Text);
+
+         if (folders.Count() > 0)
+         {
+            using (var load = new LoadingProgress("Zipando Arquivos..."))
+            {
+               load.TotalRegistros = folders.Count();
+
+               foreach (var folder in folders)
+               {
+                  var folderName = Path.GetFileName(folder.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+                  var zipPath = Path.Combine(TxtPathVersions.Text, folderName + ".zip");
+
+                  ZipFile.CreateFromDirectory(
+                      folder,
+                      zipPath,
+                      CompressionLevel.Optimal,
+                      includeBaseDirectory: false
+                  );
+
+                  load.TotalRegistrosProcessados++;
+                  load.AtualizarProgresso();
+               }
+            }
+         }
+      }
+
       private void BtnZiparVersoes_Click(object sender, EventArgs e)
       {
          try
@@ -541,38 +614,10 @@ namespace FolderManager
                return;
             }
 
-            var zips = Directory.EnumerateFiles(TxtPathVersions.Text, "*.zip", SearchOption.TopDirectoryOnly);
-            foreach (var zip in zips)
-               File.Delete(zip);
+            ZipFiles();
 
-            var folders = Directory.GetDirectories(TxtPathVersions.Text);
-
-            if (folders.Count() > 0)
-            {
-               using (var load = new LoadingProgress("Zipando Arquivos..."))
-               {
-                  load.TotalRegistros = folders.Count();
-
-                  foreach (var folder in folders)
-                  {
-                     var folderName = Path.GetFileName(folder.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
-                     var zipPath = Path.Combine(TxtPathVersions.Text, folderName + ".zip");
-
-                     ZipFile.CreateFromDirectory(
-                         folder,
-                         zipPath,
-                         CompressionLevel.Optimal,
-                         includeBaseDirectory: false
-                     );
-
-                     load.TotalRegistrosProcessados++;
-                     load.AtualizarProgresso();
-                  }
-               }
-
-               Thread.Sleep(10);
-               MessageBox.Show("Pastas Zipadas com Sucesso");
-            }
+            Thread.Sleep(10);
+            MessageBox.Show("Pastas Zipadas com Sucesso");
          }
          catch (Exception)
          {
