@@ -237,7 +237,7 @@ namespace VersionGenerator
             MessageBox.Show("Por favor, selecione um caminho para as versões válido.");
             return false;
          }
-         if (!this.ListProjects.Exists(x=>x.IsSelected))
+         if (!this.ListProjects.Exists(x => x.IsSelected))
          {
             MessageBox.Show("Selecione um projeto para gerar");
             return false;
@@ -281,7 +281,7 @@ namespace VersionGenerator
 
                foreach (var file in listFiles)
                {
-                                    var label = item.Name;
+                  var label = item.Name;
 
                   if (!string.IsNullOrEmpty(TxtVersion.Text))
                      label = $"{item.Name} - {TxtVersion.Text}";
@@ -301,7 +301,15 @@ namespace VersionGenerator
                   bat.AppendLine();
                   bat.AppendLine(@"CALL %VSEnvCmd%");
                   bat.AppendLine(@"echo Iniciando a build da solução em modo Release...");
-                  bat.AppendLine($@"msbuild %SolutionFile% /t:Build /p:Configuration=Release /p:Platform=""Any CPU"" /p:OutPutPath=""{outDir}""");
+
+                  //  bat.AppendLine($@"msbuild ""{file}"" /p:Configuration=Release /p:Platform=""Any CPU"" /p:DeployOnBuild=true /p:WebPublishMethod=FileSystem /p:PublishUrl=""{outDir}""");
+                  
+                  if (item.Type.Equals(ProjectType.API))
+                     bat.AppendLine($@"msbuild ""{file}"" /t:WebPublish /p:Configuration=Release /p:DeployOnBuild=true /p:WebPublishMethod=FileSystem /p:PublishUrl=""{outDir}""  /p:DeleteExistingFiles=true /p:UseWPP_CopyWebApplication=True /p:PipelineDependsOnBuild=False");
+                  else
+                     bat.AppendLine($@"msbuild ""{file}"" /t:Build /p:Configuration=Release /p:Platform=""Any CPU"" /p:OutPutPath=""{outDir}""");
+
+                  bat.AppendLine(@"pause");
                   bat.AppendLine(@"IF %ERRORLEVEL% EQU 0 (
                                  echo Build Release concluida com SUCESSO!
                              ) ELSE (
