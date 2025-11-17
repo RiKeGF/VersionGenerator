@@ -564,7 +564,7 @@ namespace VersionGenerator
                       folder,
                       zipPath,
                       CompressionLevel.Optimal,
-                      includeBaseDirectory: false
+                      includeBaseDirectory: true
                   );
 
                   load.TotalRegistrosProcessados++;
