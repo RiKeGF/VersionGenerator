@@ -22,8 +22,11 @@
    public enum ProjectType
    {
       API, 
+      API6, 
+      API8, 
       WinForms, 
       AspNetMvc,
+      Servico,
       Outro,
    }
 }

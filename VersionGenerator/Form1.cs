@@ -218,7 +218,7 @@ namespace VersionGenerator
 
       private void ChangeReleaseDirectory()
       {
-         foreach (var item in this.ListProjects.FindAll(x => x.IsSelected))
+         foreach (var item in this.ListProjects.FindAll(x => x.IsSelected && x.Type != ProjectType.API))
          {
             string path = $@"{TxtPathProject.Text}{item.Reference}";
 
@@ -235,10 +235,9 @@ namespace VersionGenerator
                   var ns = xml.Root.Name.Namespace;
 
                   var group = xml.Root.Elements(ns + "PropertyGroup").FirstOrDefault(e => ((string)e.Attribute("Condition") ?? "")
-                                                                     .Replace(" ", "") == "'$(Configuration)|$(Platform)'=='Release|AnyCPU'")
-                             ?? new XElement(ns + "PropertyGroup");
+                                                                     .Replace(" ", "") == "'$(Configuration)|$(Platform)'=='Release|AnyCPU'");
 
-                  if (group.Parent == null) xml.Root.AddFirst(group);
+                  if (group == null || group.Parent == null) continue;
 
                   group.SetElementValue(ns + "OutputPath", $@"{TxtPathVersions.Text}{item.Name}\");
 
@@ -335,21 +334,24 @@ namespace VersionGenerator
                   bat.AppendLine(@"CALL %VSEnvCmd%");
                   bat.AppendLine(@"echo Iniciando a build da solução em modo Release...");
 
-                  //  bat.AppendLine($@"msbuild ""{file}"" /p:Configuration=Release /p:Platform=""Any CPU"" /p:DeployOnBuild=true /p:WebPublishMethod=FileSystem /p:PublishUrl=""{outDir}""");
-
                   if (item.Type.Equals(ProjectType.API))
                      bat.AppendLine($@"msbuild ""{file}"" /t:WebPublish /p:Configuration=Release /p:DeployOnBuild=true /p:WebPublishMethod=FileSystem /p:PublishUrl=""{outDir}""  /p:DeleteExistingFiles=true /p:UseWPP_CopyWebApplication=True /p:PipelineDependsOnBuild=False");
+                  else if (item.Type.Equals(ProjectType.API6) || item.Type.Equals(ProjectType.API8))
+                     bat.AppendLine($@"msbuild ""{file}"" /t:Publish /p:Configuration=Release /p:PublishDir=""{outDir}"" /p:DeleteExistingFiles=true");
                   else
                      bat.AppendLine($@"msbuild ""{file}"" /t:Build /p:Configuration=Release");
 
+                  
+                  //  bat.AppendLine($@"msbuild ""{file}"" /p:Configuration=Release /p:Platform=""Any CPU"" /p:DeployOnBuild=true /p:WebPublishMethod=FileSystem /p:PublishUrl=""{outDir}""");
+                  //bat.AppendLine($@"msbuild ""{file}"" /t:Publish /p:Configuration=Release /p:PublishDir=""{outDir}"" /p:DeleteExistingFiles=true");
                   //bat.AppendLine($@"msbuild ""{file}"" /t:Build /p:Configuration=Release /p:OutDir=""{outDir}"" /p:OutputPath=""{outDir}""");
                   // bat.AppendLine($@"msbuild ""{file}"" /t:Build /p:Configuration=Release /p:OutputPath=""{outDir}""");
 
-                  bat.AppendLine(@"pause");
                   bat.AppendLine(@"IF %ERRORLEVEL% EQU 0 (
                                  echo Build Release concluida com SUCESSO!
                              ) ELSE (
                                  echo Ocorreu um ERRO durante a build Release.
+                                 pause
                              )");
 
                   bat.AppendLine();
