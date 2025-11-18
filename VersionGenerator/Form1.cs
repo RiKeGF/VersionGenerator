@@ -20,6 +20,7 @@ namespace VersionGenerator
       private List<Project> ListInconsistProjects = new List<Project>();
       private string LocalPath;
       private string LastPath;
+      private int Qtd;
 
       public Form1()
       {
@@ -215,6 +216,38 @@ namespace VersionGenerator
          }
       }
 
+      private void ChangeReleaseDirectory()
+      {
+         foreach (var item in this.ListProjects.FindAll(x => x.IsSelected))
+         {
+            string path = $@"{TxtPathProject.Text}{item.Reference}";
+
+            var listFiles = new List<string>();
+
+            listFiles.AddRange(Directory.GetFiles(path, "*.csproj", SearchOption.AllDirectories));
+            listFiles.AddRange(Directory.GetFiles(path, "*.vbproj", SearchOption.AllDirectories));
+
+            if (listFiles.Count > 0)
+            {
+               foreach (var file in listFiles)
+               {
+                  var xml = XDocument.Load(file);
+                  var ns = xml.Root.Name.Namespace;
+
+                  var group = xml.Root.Elements(ns + "PropertyGroup").FirstOrDefault(e => ((string)e.Attribute("Condition") ?? "")
+                                                                     .Replace(" ", "") == "'$(Configuration)|$(Platform)'=='Release|AnyCPU'")
+                             ?? new XElement(ns + "PropertyGroup");
+
+                  if (group.Parent == null) xml.Root.AddFirst(group);
+
+                  group.SetElementValue(ns + "OutputPath", $@"{TxtPathVersions.Text}{item.Name}\");
+
+                  xml.Save(file);
+               }
+            }
+         }
+      }
+
       private string RetornarVersao()
       {
          string texto = TxtVersion.Text;
@@ -246,7 +279,7 @@ namespace VersionGenerator
          return true;
       }
 
-      private void GenerateVersions()
+      private void GenerateVersions(List<Project> list, string batname = "")
       {
          try
          {
@@ -267,7 +300,7 @@ namespace VersionGenerator
             bat.AppendLine();
             bat.AppendLine("ping 127.0.0.1 -n 1 >nul");
 
-            foreach (var item in this.ListProjects.FindAll(x => x.IsSelected))
+            foreach (var item in list.FindAll(x => x.IsSelected))
             {
                // acha .csproj/.vbproj
                var baseProjDir = System.IO.Path.Combine(TxtPathProject.Text, item.Reference);
@@ -303,11 +336,14 @@ namespace VersionGenerator
                   bat.AppendLine(@"echo Iniciando a build da solução em modo Release...");
 
                   //  bat.AppendLine($@"msbuild ""{file}"" /p:Configuration=Release /p:Platform=""Any CPU"" /p:DeployOnBuild=true /p:WebPublishMethod=FileSystem /p:PublishUrl=""{outDir}""");
-                  
+
                   if (item.Type.Equals(ProjectType.API))
                      bat.AppendLine($@"msbuild ""{file}"" /t:WebPublish /p:Configuration=Release /p:DeployOnBuild=true /p:WebPublishMethod=FileSystem /p:PublishUrl=""{outDir}""  /p:DeleteExistingFiles=true /p:UseWPP_CopyWebApplication=True /p:PipelineDependsOnBuild=False");
                   else
-                     bat.AppendLine($@"msbuild ""{file}"" /t:Build /p:Configuration=Release /p:Platform=""Any CPU"" /p:OutPutPath=""{outDir}""");
+                     bat.AppendLine($@"msbuild ""{file}"" /t:Build /p:Configuration=Release");
+
+                  //bat.AppendLine($@"msbuild ""{file}"" /t:Build /p:Configuration=Release /p:OutDir=""{outDir}"" /p:OutputPath=""{outDir}""");
+                  // bat.AppendLine($@"msbuild ""{file}"" /t:Build /p:Configuration=Release /p:OutputPath=""{outDir}""");
 
                   bat.AppendLine(@"pause");
                   bat.AppendLine(@"IF %ERRORLEVEL% EQU 0 (
@@ -326,7 +362,7 @@ namespace VersionGenerator
                }
             }
 
-            var batPath = System.IO.Path.Combine(TxtPathVersions.Text, $"gerar_v{RetornarVersao()}.bat");
+            var batPath = System.IO.Path.Combine(TxtPathVersions.Text, $"gerar{batname}_v{RetornarVersao()}.bat");
             File.WriteAllText(batPath, bat.ToString(), Encoding.Default);
          }
          catch (Exception)
@@ -335,103 +371,10 @@ namespace VersionGenerator
          }
       }
 
-      private void GenerateVersionsInconsist()
+      private void ExecuteBat(string batname = "")
       {
-         try
-         {
-            var v = RetornarVersao();
-
-            var bat = new StringBuilder();
-
-            bat.AppendLine("@echo off");
-            bat.AppendLine("color 0A");
-            bat.AppendLine("REM ============================================================");
-            bat.AppendLine("REM   Gerador de Versoes");
-            bat.AppendLine("REM   Autor: Luiz Henrique Finger");
-            bat.AppendLine("REM ============================================================");
-            bat.AppendLine();
-            bat.AppendLine("echo ================================================");
-            bat.AppendLine($"echo Versao: {RetornarVersao()}");
-            bat.AppendLine("echo ================================================");
-            bat.AppendLine();
-            bat.AppendLine("ping 127.0.0.1 -n 1 >nul");
-
-            foreach (var item in this.ListInconsistProjects)
-            {
-               // acha .csproj/.vbproj
-               var baseProjDir = System.IO.Path.Combine(TxtPathProject.Text, item.Reference);
-               var csproj = System.IO.Path.Combine(baseProjDir, $"{item.Reference}.csproj");
-               var vbproj = System.IO.Path.Combine(baseProjDir, $"{item.Reference}.vbproj");
-               var projectPath = File.Exists(csproj) ? csproj :
-                                 File.Exists(vbproj) ? vbproj : "";
-
-               if (!File.Exists(projectPath))
-               {
-                  var files = Directory.GetDirectories(baseProjDir);
-
-                  if (files.Count() > 0)
-                  {
-                     baseProjDir = files.First();
-                     csproj = System.IO.Path.Combine(baseProjDir, $"{item.Reference}.csproj");
-                     vbproj = System.IO.Path.Combine(baseProjDir, $"{item.Reference}.vbproj");
-                     projectPath = File.Exists(csproj) ? csproj :
-                                   File.Exists(vbproj) ? vbproj : "";
-
-                     if (!File.Exists(projectPath))
-                        continue;
-                  }
-                  else
-                     continue;
-               }
-
-               var label = item.Name;
-
-               if (!string.IsNullOrEmpty(TxtVersion.Text))
-                  label = $"{item.Name} - {TxtVersion.Text}";
-
-               var outDir = System.IO.Path.Combine(TxtPathVersions.Text, label);
-
-               bat.AppendLine("REM ---------------------------");
-               bat.AppendLine($@"REM Projeto: {item.Name}");
-               bat.AppendLine("REM ---------------------------");
-               bat.AppendLine("ping 127.0.0.1 -n 6 >nul");
-               bat.AppendLine($@"set SolutionFile=""{projectPath}""");
-               bat.AppendLine($@"set VSEnvCmd=""C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\Tools\VsDevCmd.bat""");
-               bat.AppendLine("echo -----------------------------------------------");
-               bat.AppendLine($@"echo {label}");
-               bat.AppendLine("echo -----------------------------------------------");
-               bat.AppendLine("ping 127.0.0.1 -n 6 >nul");
-               bat.AppendLine();
-               bat.AppendLine(@"CALL %VSEnvCmd%");
-               bat.AppendLine(@"echo Iniciando a build da solução em modo Release...");
-               bat.AppendLine($@"msbuild %SolutionFile% /t:Build /p:Configuration=Release /p:Platform=""Any CPU"" /p:OutPutPath=""{outDir}""");
-               bat.AppendLine(@"IF %ERRORLEVEL% EQU 0 (
-                                 echo Build Release concluida com SUCESSO!
-                             ) ELSE (
-                                 echo Ocorreu um ERRO durante a build Release.
-                             )");
-
-               bat.AppendLine();
-               bat.AppendLine();
-               bat.AppendLine();
-               bat.AppendLine();
-               bat.AppendLine();
-               bat.AppendLine();
-               bat.AppendLine();
-            }
-
-            var batPath = System.IO.Path.Combine(TxtPathVersions.Text, $"gerarinconsist_v{RetornarVersao()}.bat");
-            File.WriteAllText(batPath, bat.ToString(), Encoding.Default);
-         }
-         catch (Exception)
-         {
-            throw;
-         }
-      }
-
-      private void ExecuteBat()
-      {
-         var path = $@"{TxtPathVersions.Text}gerar_v{RetornarVersao()}.bat";
+         this.Qtd++;
+         var path = $@"{TxtPathVersions.Text}gerar{batname}_v{RetornarVersao()}.bat";
          var psi = new ProcessStartInfo
          {
             FileName = "cmd.exe",
@@ -447,12 +390,12 @@ namespace VersionGenerator
             if (proc.ExitCode == 0 || proc.ExitCode == 255)
             {
                this.ListInconsistProjects.Clear();
-               this.ListInconsistProjects.AddRange(this.ListProjects.FindAll(x => Directory.GetFiles(Path.Combine(TxtPathVersions.Text, string.Concat(x.Name, " - ", TxtVersion.Text))).Length == 0));
+               this.ListInconsistProjects.AddRange(this.ListProjects.FindAll(x => x.IsSelected && Directory.GetFiles(Path.Combine(TxtPathVersions.Text, (string.IsNullOrEmpty(RetornarVersao())) ? x.Name : string.Concat(x.Name, " - ", RetornarVersao()))).Length == 0));
 
-               if (this.ListInconsistProjects.Count > 0)
+               if (this.ListInconsistProjects.Count > 0 && this.Qtd <= 3)
                {
-                  GenerateVersionsInconsist();
-                  ExecuteBatInconsist(false);
+                  GenerateVersions(this.ListInconsistProjects, "_inconsist");
+                  ExecuteBat("_inconsist");
                }
                else
                {
@@ -462,48 +405,15 @@ namespace VersionGenerator
          }
       }
 
-      private void ExecuteBatInconsist(bool isReprocessamento)
-      {
-         var path = $@"{TxtPathVersions.Text}gerarinconsist_v{RetornarVersao()}.bat";
-         var psi = new ProcessStartInfo
-         {
-            FileName = "cmd.exe",
-            Arguments = $"/c \"{path}\"",
-            WorkingDirectory = Path.GetDirectoryName(path),
-            UseShellExecute = true,
-         };
-
-         using (var proc = Process.Start(psi))
-         {
-            proc.WaitForExit();
-
-            if (proc.ExitCode == 0 || proc.ExitCode == 255)
-            {
-               if (!isReprocessamento)
-               {
-                  this.ListInconsistProjects.Clear();
-                  this.ListInconsistProjects.AddRange(this.ListProjects.FindAll(x => Directory.GetFiles(Path.Combine(TxtPathVersions.Text, string.Concat(x.Name, " - ", TxtVersion.Text))).Length == 0));
-                  if (this.ListInconsistProjects.Count > 0)
-                  {
-                     GenerateVersionsInconsist();
-                     ExecuteBatInconsist(true);
-                  }
-                  else
-                  {
-                     Finish();
-                  }
-               }
-               else
-                  MessageBox.Show(string.Format("Versões não Geradas:\n\n{0}", string.Join("\n", this.ListInconsistProjects.ConvertAll(x => x.Name))));
-            }
-         }
-      }
-
       private void Finish()
       {
          ZipFiles();
          Thread.Sleep(10);
          MessageBox.Show("Versões Geradas com Sucesso");
+
+         if (this.ListInconsistProjects.Count > 0)
+            MessageBox.Show(string.Format("Versões não Geradas:\n\n{0}", string.Join("\n", this.ListInconsistProjects.ConvertAll(x => x.Name))));
+
          Process.Start(TxtPathVersions.Text);
       }
 
@@ -511,6 +421,8 @@ namespace VersionGenerator
       {
          try
          {
+            this.Qtd = 0;
+
             if (Validar())
             {
                CleanDirectory();
@@ -518,14 +430,15 @@ namespace VersionGenerator
                SaveTempProjects();
                SaveLastPath();
                ChangeAssemblyVersion();
-               GenerateVersions();
+               ChangeReleaseDirectory();
+               GenerateVersions(this.ListProjects);
 
                ExecuteBat();
             }
          }
-         catch (Exception)
+         catch (Exception ex)
          {
-            MessageBox.Show("Ocorreu um erro ao criar as pastas. Verifique se o caminho está correto e se você tem permissão para modificar o diretório.");
+            MessageBox.Show(ex.Message);
          }
       }
 
