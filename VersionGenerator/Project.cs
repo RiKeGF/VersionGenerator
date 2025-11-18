@@ -23,10 +23,11 @@
    {
       API, 
       API6, 
-      API8, 
+      API8,
       WinForms, 
       AspNetMvc,
       Servico,
       Outro,
+      ServicoDotNet3,
    }
 }
