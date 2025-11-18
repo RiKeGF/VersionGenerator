@@ -218,7 +218,7 @@ namespace VersionGenerator
 
       private void ChangeReleaseDirectory()
       {
-         foreach (var item in this.ListProjects.FindAll(x => x.IsSelected && x.Type != ProjectType.API))
+         foreach (var item in this.ListProjects.FindAll(x => x.IsSelected && !IsApi(x)))
          {
             string path = $@"{TxtPathProject.Text}{item.Reference}";
 
@@ -341,7 +341,7 @@ namespace VersionGenerator
                   else
                      bat.AppendLine($@"msbuild ""{file}"" /t:Build /p:Configuration=Release");
 
-                  
+
                   //  bat.AppendLine($@"msbuild ""{file}"" /p:Configuration=Release /p:Platform=""Any CPU"" /p:DeployOnBuild=true /p:WebPublishMethod=FileSystem /p:PublishUrl=""{outDir}""");
                   //bat.AppendLine($@"msbuild ""{file}"" /t:Publish /p:Configuration=Release /p:PublishDir=""{outDir}"" /p:DeleteExistingFiles=true");
                   //bat.AppendLine($@"msbuild ""{file}"" /t:Build /p:Configuration=Release /p:OutDir=""{outDir}"" /p:OutputPath=""{outDir}""");
@@ -365,6 +365,10 @@ namespace VersionGenerator
             }
 
             var batPath = System.IO.Path.Combine(TxtPathVersions.Text, $"gerar{batname}_v{RetornarVersao()}.bat");
+
+            if (File.Exists(batPath))
+               File.Delete(batPath);
+
             File.WriteAllText(batPath, bat.ToString(), Encoding.Default);
          }
          catch (Exception)
@@ -392,7 +396,7 @@ namespace VersionGenerator
             if (proc.ExitCode == 0 || proc.ExitCode == 255)
             {
                this.ListInconsistProjects.Clear();
-               this.ListInconsistProjects.AddRange(this.ListProjects.FindAll(x => x.IsSelected && Directory.GetFiles(Path.Combine(TxtPathVersions.Text, (string.IsNullOrEmpty(RetornarVersao())) ? x.Name : string.Concat(x.Name, " - ", RetornarVersao()))).Length == 0));
+               this.ListInconsistProjects.AddRange(this.ListProjects.FindAll(x => x.IsSelected && Directory.GetFiles(Path.Combine(TxtPathVersions.Text, (string.IsNullOrEmpty(RetornarVersao())) ? x.Name : string.Concat(x.Name, " - ", TxtVersion.Text))).Length == 0));
 
                if (this.ListInconsistProjects.Count > 0 && this.Qtd <= 3)
                {
@@ -405,6 +409,11 @@ namespace VersionGenerator
                }
             }
          }
+      }
+
+      private bool IsApi(Project project)
+      {
+         return (project.Type.Equals(ProjectType.API) || project.Type.Equals(ProjectType.API6) || project.Type.Equals(ProjectType.API8));
       }
 
       private void Finish()
